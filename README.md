@@ -1,6 +1,6 @@
 # Compiladores
 
-Repositório para o curso de  Compiladores da Universidade Federal de São Carlos no semestre ENPE 2020/2, ministrado pelo professor Daniel Lucrédio.
+Repositório para o curso de  Compiladores da Universidade Federal de São Carlos no semestre ENPE 2020/2, ministrado pelo professor Daniel Lucrédio. Trabalho realizado pelo aluno Luís Felipe Corrêa Ortolan - RA: 759375.
 
 Nesta pasta está sendo implementado um compilador para a Linguagem Algorítmica (LA). 
 
