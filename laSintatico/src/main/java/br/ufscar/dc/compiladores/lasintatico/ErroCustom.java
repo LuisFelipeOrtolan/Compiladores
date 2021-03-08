@@ -5,6 +5,7 @@
  */
 package br.ufscar.dc.compiladores.lasintatico;
 
+import br.ufscar.dc.compiladores.laSintatico.laLexer;
 import java.io.PrintWriter;
 import java.util.BitSet;
 import org.antlr.v4.runtime.ANTLRErrorListener;
@@ -18,6 +19,7 @@ import org.antlr.v4.runtime.dfa.DFA;
 
 public class ErroCustom implements ANTLRErrorListener {
     PrintWriter pw;
+    boolean erros = false;
     
     public ErroCustom(PrintWriter pw){
         this.pw = pw;
@@ -42,13 +44,26 @@ public class ErroCustom implements ANTLRErrorListener {
     public void	syntaxError(Recognizer<?,?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) {
         // Aqui vamos colocar o tratamento de erro customizado
 
+        if(erros == true)
+            return;
+        
         Token t = (Token) offendingSymbol;
-        if(t.getType() != -1){
-            pw.println("Linha " + line + ": erro sintatico proximo a " + t.getText());
-            pw.println("Fim da compilacao");
-        } else{
+        
+        String nome = laLexer.VOCABULARY.getDisplayName(t.getType());
+        
+        if(t.getType() == -1){
             pw.println("Linha " + line + ": erro sintatico proximo a EOF");
-            pw.println("Fim da compilacao");
+        } else if("ERRO".equals(nome)){
+            pw.println("Linha " + line + ": " + t.getText() + " - simbolo nao identificado");
+        } else if("COMENTARIOS_ERRADOS".equals(nome)){
+            pw.println("Linha " + line + ": comentario nao fechado");
+        } else if("CADEIA_ERRADA".equals(nome)){
+            pw.println("Linha " + line + ": cadeia literal nao fechada");
+        }else{
+            pw.println("Linha " + line + ": erro sintatico proximo a " + t.getText());
         }
+        
+        pw.println("Fim da compilacao");
+        erros = true;
     }
 }
