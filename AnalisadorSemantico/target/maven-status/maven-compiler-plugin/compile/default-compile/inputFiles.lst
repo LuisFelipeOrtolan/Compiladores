@@ -1,0 +1,15 @@
+/home/luisfelipe/Documentos/Compiladores/AnalisadorSemantico/src/main/java/br/ufscar/dc/compiladores/analisadorsemantico/Utils.java
+/home/luisfelipe/Documentos/Compiladores/AnalisadorSemantico/target/generated-sources/antlr4/br/ufscar/dc/compiladores/analisadorsemantico/laLexer.java
+/home/luisfelipe/Documentos/Compiladores/AnalisadorSemantico/src/main/java/br/ufscar/dc/compiladores/analisadorsemantico/TabelaDeSimbolos.java
+/home/luisfelipe/Documentos/Compiladores/AnalisadorSemantico/src/main/java/br/ufscar/dc/compiladores/analisadorsemantico/EntradaTabelaSimbolos.java
+/home/luisfelipe/Documentos/Compiladores/AnalisadorSemantico/src/main/java/br/ufscar/dc/compiladores/analisadorsemantico/auxFuncoes.java
+/home/luisfelipe/Documentos/Compiladores/AnalisadorSemantico/target/generated-sources/antlr4/br/ufscar/dc/compiladores/analisadorsemantico/laBaseVisitor.java
+/home/luisfelipe/Documentos/Compiladores/AnalisadorSemantico/target/generated-sources/antlr4/br/ufscar/dc/compiladores/analisadorsemantico/laVisitor.java
+/home/luisfelipe/Documentos/Compiladores/AnalisadorSemantico/src/main/java/br/ufscar/dc/compiladores/analisadorsemantico/Programa.java
+/home/luisfelipe/Documentos/Compiladores/AnalisadorSemantico/target/generated-sources/antlr4/br/ufscar/dc/compiladores/analisadorsemantico/laListener.java
+/home/luisfelipe/Documentos/Compiladores/AnalisadorSemantico/target/generated-sources/antlr4/br/ufscar/dc/compiladores/analisadorsemantico/laParser.java
+/home/luisfelipe/Documentos/Compiladores/AnalisadorSemantico/src/main/java/br/ufscar/dc/compiladores/analisadorsemantico/Principal.java
+/home/luisfelipe/Documentos/Compiladores/AnalisadorSemantico/src/main/java/br/ufscar/dc/compiladores/analisadorsemantico/Escopos.java
+/home/luisfelipe/Documentos/Compiladores/AnalisadorSemantico/target/generated-sources/antlr4/br/ufscar/dc/compiladores/analisadorsemantico/laBaseListener.java
+/home/luisfelipe/Documentos/Compiladores/AnalisadorSemantico/src/main/java/br/ufscar/dc/compiladores/analisadorsemantico/Tipos.java
+/home/luisfelipe/Documentos/Compiladores/AnalisadorSemantico/src/main/java/br/ufscar/dc/compiladores/analisadorsemantico/TabelaDeFuncoes.java
