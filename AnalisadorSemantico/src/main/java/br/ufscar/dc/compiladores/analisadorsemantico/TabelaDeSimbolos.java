@@ -5,18 +5,20 @@ import java.util.HashMap;
 public class TabelaDeSimbolos {
     private HashMap<String, EntradaTabelaSimbolos> tabelaDeSimbolos;
     
-    public TabelaDeSimbolos(){
+    public TabelaDeSimbolos(){ // Inicializa a classe.
         tabelaDeSimbolos = new HashMap<>();
     }
     
-    public void inserir(String nome, Tipos tipo){
+    public void inserir(String nome, Tipos tipo){ // Insere um identificador e um tipo na tabela.
         EntradaTabelaSimbolos ets = new EntradaTabelaSimbolos();
         ets.nome = nome;
         ets.tipo = tipo;
         tabelaDeSimbolos.put(nome,ets);
     }
     
-    public void inserir(String nome, Tipos tipo, TabelaDeSimbolos subtabela){
+    // Insere um identificador, um tipo e uma tabela na tabela.
+    // A subtabela é usada em contextos de struct, onde são guardadas as variáveis daquele tipo de struct.
+    public void inserir(String nome, Tipos tipo, TabelaDeSimbolos subtabela){ 
         EntradaTabelaSimbolos ets = new EntradaTabelaSimbolos();
         ets.nome = nome;
         ets.tipo = tipo;
@@ -24,10 +26,12 @@ public class TabelaDeSimbolos {
         tabelaDeSimbolos.put(nome,ets);
     }
     
+    // Verifica se uma determinada string está naquela tabela.
     public EntradaTabelaSimbolos verificar(String nome){
         return tabelaDeSimbolos.get(nome);
     }
     
+    // Imprime uma tabela com uma subtabela.
     public void imprimir(){
         System.out.println();
         System.out.println("Tabela: ");
