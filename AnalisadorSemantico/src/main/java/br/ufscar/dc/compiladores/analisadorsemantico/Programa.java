@@ -212,9 +212,7 @@ public class Programa extends laBaseVisitor<Tipos>{
         for(TabelaDeSimbolos ts : escopos)
             if(ts.verificar(nome) != null)
                 if(ts.verificar(nome).tipo == Tipos.Struct){
-                    System.out.println(campo);
                     if(ctx.id1.ponto != null){
-                        ts.imprimir();
                         TabelaDeSimbolos aux = ts.verificar(nome).tabelaParaStruct;
                         if (aux.verificar(campo) != null)
                             achou = true;
@@ -591,8 +589,10 @@ public class Programa extends laBaseVisitor<Tipos>{
             TabelaDeSimbolos ts = aninhados.obterEscopoAtual();
             if(constantes.indexOf(ctx.id.getText()) >= 0)
                 Utils.adicionarErroSemantico(ctx.id, "identificador " + ctx.id.getText() + " ja declarado anteriormente");
-            else
+            else{
                 ts.inserir(ctx.id.getText(), tipo);
+                constantes.add(ctx.id.getText());
+            } 
 
             if(ctx.par != null){
                 visitParametros(ctx.par);
@@ -620,18 +620,20 @@ public class Programa extends laBaseVisitor<Tipos>{
             TabelaDeSimbolos ts = aninhados.obterEscopoAtual();
             if(constantes.indexOf(ctx.id.getText()) >= 0)
                 Utils.adicionarErroSemantico(ctx.id, "identificador " + ctx.id.getText() + " ja declarado anteriormente");
-            else
-                ts.inserir(ctx.id.getText(), Tipos.Erro);
+            else {
+                ts.inserir(ctx.id.getText(), Tipos.Procedure);
+                constantes.add(ctx.id.getText());
+            }
             
             if(ctx.par != null){
                 visitParametros(ctx.par);
                 List<Tipos> listaRetorno = new LinkedList<Tipos>(pars);
-                tdf.inserir(ctx.id.getText(), false, listaRetorno, Tipos.Erro);
+                tdf.inserir(ctx.id.getText(), false, listaRetorno, Tipos.Procedure);
                 pars.clear();
             }
             else{
                 List<Tipos> listaVazia = new Stack<Tipos>();
-                tdf.inserir(ctx.id.getText(), false, listaVazia, Tipos.Erro);
+                tdf.inserir(ctx.id.getText(), false, listaVazia, Tipos.Procedure);
             }
             aninhados.criarNovoEscopo();
             for(int i = 0; i < ctx.decl.size(); i++)
@@ -640,7 +642,7 @@ public class Programa extends laBaseVisitor<Tipos>{
             for(int i = 0; i < ctx.lcmd.size(); i++)
                 visitCmd(ctx.lcmd.get(i));
             aninhados.abandonarEscopo();
-            return null;
+            return Tipos.Procedure;
         }
     }
     
@@ -687,6 +689,8 @@ public class Programa extends laBaseVisitor<Tipos>{
 
     @Override 
     public Tipos visitCmdRetorne(laParser.CmdRetorneContext ctx){   
+        System.out.println("Algo");
+        
         if(!retorneValido){
             Utils.adicionarErroSemantico(ctx.start, "comando retorne nao permitido nesse escopo");
         }
