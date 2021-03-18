@@ -150,7 +150,7 @@ variavel:
     ident1=identificador (',' outrosIdents+=identificador)* ':' tip=tipo;
 
 identificador:
-    text=IDENT ('.' IDENT)* dimensao;
+    text=IDENT (ponto='.' text1+=IDENT)* dimensao;
 
 dimensao:
     ('[' exp_aritmetica ']')*;
@@ -187,7 +187,7 @@ cmd:
     cmdLeia | cmdEscreva | cmdSe | cmdCaso | cmdPara | cmdEnquanto| cmdFaca | cmdAtribuicao | cmdChamada | cmdRetorne;
 
 cmdLeia:
-    'leia' '(' ('^')? id1=identificador (',' ('^')? outrosids+=identificador)* ')';
+    'leia' '(' ('^')? id1=identificador (vir=',' ('^')? outrosids+=identificador)* ')';
 
 cmdEscreva:
     'escreva' '(' exp1=expressao (',' outrosexp+=expressao)*  ')';

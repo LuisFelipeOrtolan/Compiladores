@@ -33,6 +33,11 @@ public class Utils {
                 return Tipos.Logico;
             else
                 return Tipos.Erro;
+        else if(tipo1 == Tipos.Struct)
+            if(tipo2 == Tipos.Struct)
+                return Tipos.Struct;
+            else
+                return Tipos.Erro;
         else
             return Tipos.Erro;
     } 

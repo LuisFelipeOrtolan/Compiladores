@@ -7,30 +7,44 @@ import java.util.Stack;
 
 public class Programa extends laBaseVisitor<Tipos>{
     
+    String help = "";
+    
     Escopos aninhados;
     Utils opts = new Utils();
-    TabelaDeFuncoes tds = new TabelaDeFuncoes();
     
     boolean retorneValido = false;
-
-    List<Tipos> pars = new LinkedList<>();
-    List<String> constantes = new ArrayList();
     
+    TabelaDeFuncoes tdf = new TabelaDeFuncoes();
+    List<Tipos> pars = new LinkedList<>();
+    
+    List<String> constantes = new ArrayList();
+
     @Override 
     public Tipos visitPrograma(laParser.ProgramaContext ctx){
-        aninhados = new Escopos();
-        aninhados.criarNovoEscopo();
+        aninhados = new Escopos(); // Inicia o programa criando a variável que armazena os escopos.
         
-        super.visitPrograma(ctx);
+        aninhados.criarNovoEscopo(); // Cria o escopo global.
+        super.visitPrograma(ctx); // Visita as classes filhas.
+        aninhados.abandonarEscopo(); // Destrói o escopo global no fim do programa.
         
-        aninhados.abandonarEscopo();
         return null;
     }
     
     @Override
     public Tipos visitDeclaracao_local(laParser.Declaracao_localContext ctx){
         if(ctx.decl != null){
-            visitVariavel(ctx.vars);
+            if(ctx.vars.tip.reg != null){
+                aninhados.criarNovoEscopo();
+                visitTipo(ctx.vars.tip);
+                TabelaDeSimbolos tsRegistro = aninhados.obterEscopoAtual();
+                aninhados.abandonarEscopo();
+                TabelaDeSimbolos atual = aninhados.obterEscopoAtual();
+                atual.inserir(ctx.vars.ident1.getText(), Tipos.Struct , tsRegistro);
+                for(int i = 0; i < ctx.vars.outrosIdents.size(); i++){
+                    atual.inserir(ctx.vars.outrosIdents.get(i).getText(), Tipos.Struct, tsRegistro);
+                }
+            }else
+                visitVariavel(ctx.vars);
             return null;
         } else if(ctx.con != null){
             Tipos tipoValor = visitValor_constante(ctx.val);
@@ -50,14 +64,21 @@ public class Programa extends laBaseVisitor<Tipos>{
             
         } else if(ctx.tip != null){
             TabelaDeSimbolos atual = aninhados.obterEscopoAtual();
-            String nome = ctx.id.getText();
-            if(atual.verificar(nome) == null)
-                if(constantes.indexOf(nome) >= 0)
-                    Utils.adicionarErroSemantico(ctx.id, "identificador " + nome + " ja declarado anteriormente");
-                else
-                    atual.inserir(nome, visitTipo(ctx.t));
+            String nomeStruct = ctx.id.getText();
+            if(atual.verificar(nomeStruct) == null)
+                if(constantes.indexOf(nomeStruct) >= 0)
+                    Utils.adicionarErroSemantico(ctx.id, "identificador " + nomeStruct + " ja declarado anteriormente");
+                else{
+                    aninhados.criarNovoEscopo(); // Cria um novo escopo.
+                    visitTipo(ctx.t); // Adiciona as variáveis ao novo escopo.
+                    TabelaDeSimbolos tsRegistro = aninhados.obterEscopoAtual(); // Copia o escopo para inserir na TabelaDeSimbolos.
+                    aninhados.abandonarEscopo(); // Abandona o escopo auxiliar.
+                    atual.inserir(nomeStruct, Tipos.Struct, tsRegistro); // Insere o struct na TabelaDeSimbolos.
+                    //for(TabelaDeSimbolos ts : aninhados.percorrerEscoposAninhados())
+                       //ts.imprimir();
+                }
             else
-                Utils.adicionarErroSemantico(ctx.id, "identificador " + nome + " ja declarado anteriormente");
+                Utils.adicionarErroSemantico(ctx.id, "identificador " + nomeStruct + " ja declarado anteriormente");
         }
         
         return null;
@@ -69,25 +90,48 @@ public class Programa extends laBaseVisitor<Tipos>{
         TabelaDeSimbolos local = aninhados.obterEscopoAtual();
 
         Tipos tipo = visitTipo(ctx.tip);
+        //System.out.println("t "+tipo);
         
-        String nome = ctx.ident1.getText();
+        String nome = ctx.ident1.text.getText();
         
         if(local.verificar(nome) == null)
             if(constantes.indexOf(nome) >= 0)
                 Utils.adicionarErroSemantico(ctx.ident1.start, "identificador " + nome + " ja declarado anteriormente");
             else
-                local.inserir(nome,tipo);
+                if(tipo == Tipos.Struct){
+                    List<TabelaDeSimbolos> ts = aninhados.percorrerEscoposAninhados();
+                    for(TabelaDeSimbolos t : ts)
+                        if(t.verificar(ctx.tip.getText()) != null){
+                            TabelaDeSimbolos copia = t.verificar(ctx.tip.getText()).tabelaParaStruct;
+                            local.inserir(nome, tipo, copia);
+                            //for(TabelaDeSimbolos ts1 : aninhados.percorrerEscoposAninhados())
+                                //ts1.imprimir();
+                        }
+                }   
+                else
+                    local.inserir(nome,tipo);
+                
         else
             Utils.adicionarErroSemantico(ctx.ident1.start, "identificador " + nome + " ja declarado anteriormente");
         
         
         for(int i = 0; i < ctx.outrosIdents.size(); i++){
-            nome = ctx.outrosIdents.get(i).getText();
+            nome = ctx.outrosIdents.get(i).text.getText();
             if(local.verificar(nome) == null)
                 if(constantes.indexOf(nome) >= 0)
-                    Utils.adicionarErroSemantico(ctx.ident1.start, "identificador " + nome + " ja declarado anteriormente");
+                    Utils.adicionarErroSemantico(ctx.outrosIdents.get(i).start, "identificador " + nome + " ja declarado anteriormente");
                 else
-                    local.inserir(nome,tipo);
+                    if(tipo == Tipos.Struct){
+                        List<TabelaDeSimbolos> ts = aninhados.percorrerEscoposAninhados();
+                        for(TabelaDeSimbolos t : ts)
+                            if(t.verificar(ctx.tip.getText()) != null){
+                                TabelaDeSimbolos copia = t.verificar(ctx.tip.getText()).tabelaParaStruct;
+                                local.inserir(nome, tipo, copia);
+                                //for(TabelaDeSimbolos ts1 : aninhados.percorrerEscoposAninhados())
+                                    //ts1.imprimir();
+                            }
+                    } else
+                        local.inserir(nome,tipo);
             else
                 Utils.adicionarErroSemantico(ctx.outrosIdents.get(i).start, "identificador " + nome + " ja declarado anteriormente");
         }
@@ -157,23 +201,53 @@ public class Programa extends laBaseVisitor<Tipos>{
     @Override
     public Tipos visitCmdLeia(laParser.CmdLeiaContext ctx){
         List<TabelaDeSimbolos> escopos = aninhados.percorrerEscoposAninhados();
-        String variavel = ctx.id1.getText();
+        
+        String nome = ctx.id1.text.getText();
+        String campo = "";
+        
+        if(ctx.id1.ponto != null)
+            campo = ctx.id1.text1.get(0).getText();
+
         boolean achou = false;
         for(TabelaDeSimbolos ts : escopos)
-            if(ts.verificar(variavel) != null)
-                achou = true;
-        
-        if(!achou)
-            Utils.adicionarErroSemantico(ctx.id1.start, "identificador " + variavel + " nao declarado");
-        
-        for(int i = 0; i < ctx.outrosids.size(); i++){;
-            achou = false;
-            variavel = ctx.outrosids.get(i).getText();
-            for(TabelaDeSimbolos ts : escopos)
-                if(ts.verificar(variavel) != null)
+            if(ts.verificar(nome) != null)
+                if(ts.verificar(nome).tipo == Tipos.Struct){
+                    System.out.println(campo);
+                    if(ctx.id1.ponto != null){
+                        ts.imprimir();
+                        TabelaDeSimbolos aux = ts.verificar(nome).tabelaParaStruct;
+                        if (aux.verificar(campo) != null)
+                            achou = true;
+                    } else
+                        achou = true;
+                } 
+                else
                     achou = true;
+
+        if(!achou)
+            Utils.adicionarErroSemantico(ctx.id1.start, "identificador " + ctx.id1.getText() + " nao declarado");
+        
+        for(int i = 0; i < ctx.outrosids.size(); i++){
+            achou = false;
+            nome = ctx.outrosids.get(i).text.getText();
+            
+            if(ctx.outrosids.get(i).ponto != null)
+                campo = ctx.outrosids.get(i).text1.get(0).getText();
+            else
+                campo = "";
+            for(TabelaDeSimbolos ts : escopos)
+                if(ts.verificar(nome) != null)
+                    if(ts.verificar(nome).tipo == Tipos.Struct){
+                        if(ctx.outrosids.get(i).ponto != null){
+                            TabelaDeSimbolos aux = ts.verificar(nome).tabelaParaStruct;
+                            if(aux.verificar(campo) != null)
+                                achou = true;
+                        } else
+                            achou = true;
+                    }else
+                        achou = true;
             if(!achou)
-                Utils.adicionarErroSemantico(ctx.outrosids.get(i).start, "identificador " + variavel + " nao declarado");
+                Utils.adicionarErroSemantico(ctx.outrosids.get(i).start, "identificador " + ctx.outrosids.get(i).getText() + " nao declarado");
         }
         return null;
     }
@@ -191,7 +265,7 @@ public class Programa extends laBaseVisitor<Tipos>{
                     if(ts.verificar(ctx.exp1.getText()) != null)
                         achou = true;
                 if(!achou){
-                    Utils.adicionarErroSemantico(ctx.exp1.start,"Variavel " + ctx.exp1.getText() + " não declarada");
+                    Utils.adicionarErroSemantico(ctx.exp1.start,"Variavel " + ctx.exp1.getText() + " nao declarada");
                 }
             }
         } else
@@ -206,7 +280,7 @@ public class Programa extends laBaseVisitor<Tipos>{
                         if(ts.verificar(ctx.outrosexp.get(i).getText()) != null)
                             achou = true;
                     if(!achou)
-                        Utils.adicionarErroSemantico(ctx.outrosexp.get(i).start,"Variavel " + ctx.outrosexp.get(i).getText() + " não declarada");
+                        Utils.adicionarErroSemantico(ctx.outrosexp.get(i).start,"Variavel " + ctx.outrosexp.get(i).getText() + " nao declarada");
                 }
             } else
                 return null;
@@ -398,7 +472,7 @@ public class Programa extends laBaseVisitor<Tipos>{
             Tipos tipo = visitParcela_unario(ctx.puna);
             if(ctx.opuna != null){
                 if(tipo == Tipos.Logico || tipo == Tipos.Literal){
-                    Utils.adicionarErroSemantico(ctx.puna.start, "Erro, operador - não compatível com tipo " + tipo);
+                    Utils.adicionarErroSemantico(ctx.puna.start, "Erro, operador - nao compatível com tipo " + tipo);
                     return Tipos.Erro;
                 }
                 else
@@ -425,19 +499,22 @@ public class Programa extends laBaseVisitor<Tipos>{
         else if(ctx.exp_par != null)
             return visitExpressao(ctx.exp_par);
         else if(ctx.iden != null){
-            String var = ctx.iden.getText();
+            String var = ctx.iden.text.getText();
             List<TabelaDeSimbolos> escopos = aninhados.percorrerEscoposAninhados();
             for(TabelaDeSimbolos ts : escopos)
                 if(ts.verificar(var) != null)
-                    return ts.verificar(var).tipo;
+                    if(ctx.iden.ponto != null)
+                        return ts.verificar(var).tabelaParaStruct.verificar(ctx.iden.text1.get(0).getText()).tipo;
+                    else
+                        return ts.verificar(var).tipo;
                   
-            Utils.adicionarErroSemantico(ctx.start, "identificador " + var + " nao declarado");
+            Utils.adicionarErroSemantico(ctx.start, "identificador " + ctx.iden.getText() + " nao declarado");
             return Tipos.Erro;        
         }else{
-            if(tds.verificar(ctx.id.getText()) == null)
+            if(tdf.verificar(ctx.id.getText()) == null)
                 return Tipos.Erro;
             
-            List<Tipos> tipo = tds.verificar(ctx.id.getText()).parametros;
+            List<Tipos> tipo = tdf.verificar(ctx.id.getText()).parametros;
             List<Tipos> exps = new LinkedList<>();
             
             exps.add(visitExpressao(ctx.exp1));
@@ -457,8 +534,8 @@ public class Programa extends laBaseVisitor<Tipos>{
                         return Tipos.Erro;
                     }
                 }
-                if(tds.verificar(ctx.id.getText()).procOrfunc)
-                    return tds.verificar(ctx.id.getText()).tipo;
+                if(tdf.verificar(ctx.id.getText()).procOrfunc)
+                    return tdf.verificar(ctx.id.getText()).tipo;
             }
         } 
         return Tipos.Erro;
@@ -467,6 +544,12 @@ public class Programa extends laBaseVisitor<Tipos>{
     @Override
     public Tipos visitCmdAtribuicao(laParser.CmdAtribuicaoContext ctx){
         Tipos identificador = visitIdentificador(ctx.id);
+        
+        if(identificador == null){
+            Utils.adicionarErroSemantico(ctx.id.start, "identificador " + ctx.id.getText() + " nao declarado");
+            return Tipos.Erro;
+        }    
+            
         Tipos atribuicao = visitExpressao(ctx.exp);
         
         if (identificador == Tipos.Real){
@@ -482,11 +565,21 @@ public class Programa extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitIdentificador(laParser.IdentificadorContext ctx){
-        List<TabelaDeSimbolos> escopos = aninhados.percorrerEscoposAninhados();
-        for(TabelaDeSimbolos ts : escopos)
-            if(ts.verificar(ctx.text.getText()) != null)
-                return ts.verificar(ctx.text.getText()).tipo;
-        
+        List<TabelaDeSimbolos> ts = aninhados.percorrerEscoposAninhados();
+    
+        for(TabelaDeSimbolos t : ts){
+            if(t.verificar(ctx.text.getText()) != null){
+                if(t.verificar(ctx.text.getText()).tipo == Tipos.Struct ){
+                    if(ctx.ponto != null){
+                        TabelaDeSimbolos aux = t.verificar(ctx.text.getText()).tabelaParaStruct;
+                        return aux.verificar(ctx.text1.get(0).getText()).tipo;
+                    }else
+                        return Tipos.Struct;
+                } else{
+                    return t.verificar(ctx.text.getText()).tipo;
+                }
+            }
+        }
         return null;
     }
     
@@ -504,12 +597,12 @@ public class Programa extends laBaseVisitor<Tipos>{
             if(ctx.par != null){
                 visitParametros(ctx.par);
                 List<Tipos> listaRetorno = new LinkedList<Tipos>(pars);
-                tds.inserir(ctx.id.getText(), true, listaRetorno, tipo);
+                tdf.inserir(ctx.id.getText(), true, listaRetorno, tipo);
                 pars.clear();
             }
             else{
                 List<Tipos> listaVazia = new LinkedList<>();
-                tds.inserir(ctx.id.getText(), true, listaVazia, tipo);
+                tdf.inserir(ctx.id.getText(), true, listaVazia, tipo);
             }
             
             aninhados.criarNovoEscopo();
@@ -523,6 +616,7 @@ public class Programa extends laBaseVisitor<Tipos>{
             return tipo;
   
         } else{
+            retorneValido = false;
             TabelaDeSimbolos ts = aninhados.obterEscopoAtual();
             if(constantes.indexOf(ctx.id.getText()) >= 0)
                 Utils.adicionarErroSemantico(ctx.id, "identificador " + ctx.id.getText() + " ja declarado anteriormente");
@@ -532,12 +626,12 @@ public class Programa extends laBaseVisitor<Tipos>{
             if(ctx.par != null){
                 visitParametros(ctx.par);
                 List<Tipos> listaRetorno = new LinkedList<Tipos>(pars);
-                tds.inserir(ctx.id.getText(), false, listaRetorno, Tipos.Erro);
+                tdf.inserir(ctx.id.getText(), false, listaRetorno, Tipos.Erro);
                 pars.clear();
             }
             else{
                 List<Tipos> listaVazia = new Stack<Tipos>();
-                tds.inserir(ctx.id.getText(), false, listaVazia, Tipos.Erro);
+                tdf.inserir(ctx.id.getText(), false, listaVazia, Tipos.Erro);
             }
             aninhados.criarNovoEscopo();
             for(int i = 0; i < ctx.decl.size(); i++)
@@ -567,7 +661,20 @@ public class Programa extends laBaseVisitor<Tipos>{
         
         TabelaDeSimbolos ts = aninhados.obterEscopoAtual();
         
-        ts.inserir(ctx.id1.getText(), tipoParametros);
+        if(tipoParametros == Tipos.Struct){
+            String tipoStruct = ctx.tip.getText();
+            List<TabelaDeSimbolos> lista = aninhados.percorrerEscoposAninhados();
+            TabelaDeSimbolos parametros = null;
+            for(TabelaDeSimbolos tabela : lista)
+                if(tabela.verificar(tipoStruct) != null)
+                    parametros = tabela.verificar(tipoStruct).tabelaParaStruct;
+            
+            if(parametros != null)
+                ts.inserir(ctx.id1.getText(), tipoParametros, parametros);
+            else
+                ts.inserir(ctx.id1.getText(), tipoParametros);
+        } else
+            ts.inserir(ctx.id1.getText(), tipoParametros);
         
         for(int i = 0; i < ctx.outrosids.size(); i++)
             ts.inserir(ctx.outrosids.get(i).getText(), tipoParametros);
@@ -576,19 +683,21 @@ public class Programa extends laBaseVisitor<Tipos>{
             pars.add(tipoParametros);
 
         return tipoParametros;
-    }
-    
+    } 
+
     @Override 
     public Tipos visitCmdRetorne(laParser.CmdRetorneContext ctx){   
-        if(!retorneValido)
+        if(!retorneValido){
             Utils.adicionarErroSemantico(ctx.start, "comando retorne nao permitido nesse escopo");
-        
+        }
         return null;
     }
     
-    //@Override
-    //public Tipos visitRegistro(laParser.RegistroContext ctx){
-        
-    //}
-    
+    @Override
+    public Tipos visitRegistro(laParser.RegistroContext ctx){
+        for(int i = 0; i < ctx.vars.size(); i++)
+            visitVariavel(ctx.vars.get(i));
+
+        return Tipos.Struct;
+    }
 }

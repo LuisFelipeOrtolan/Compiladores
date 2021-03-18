@@ -655,6 +655,9 @@ public class laParser extends Parser {
 
 	public static class IdentificadorContext extends ParserRuleContext {
 		public Token text;
+		public Token ponto;
+		public Token IDENT;
+		public List<Token> text1 = new ArrayList<Token>();
 		public DimensaoContext dimensao() {
 			return getRuleContext(DimensaoContext.class,0);
 		}
@@ -701,9 +704,10 @@ public class laParser extends Parser {
 				{
 				{
 				setState(155);
-				match(CAMPO);
+				((IdentificadorContext)_localctx).ponto = match(CAMPO);
 				setState(156);
-				match(IDENT);
+				((IdentificadorContext)_localctx).IDENT = match(IDENT);
+				((IdentificadorContext)_localctx).text1.add(((IdentificadorContext)_localctx).IDENT);
 				}
 				}
 				setState(161);
@@ -1719,6 +1723,7 @@ public class laParser extends Parser {
 
 	public static class CmdLeiaContext extends ParserRuleContext {
 		public IdentificadorContext id1;
+		public Token vir;
 		public IdentificadorContext identificador;
 		public List<IdentificadorContext> outrosids = new ArrayList<IdentificadorContext>();
 		public TerminalNode ABREPAR() { return getToken(laParser.ABREPAR, 0); }
@@ -1782,7 +1787,7 @@ public class laParser extends Parser {
 				{
 				{
 				setState(296);
-				match(VIRGULA);
+				((CmdLeiaContext)_localctx).vir = match(VIRGULA);
 				setState(298);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
