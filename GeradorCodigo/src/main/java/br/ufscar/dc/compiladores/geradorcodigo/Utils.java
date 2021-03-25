@@ -55,6 +55,7 @@ public class Utils {
         return str.matches("-?\\d+(\\.\\d+)?");
     }
     
+    // Retorna qual a letra associada ao tipo em printfs e scanfs.
     public static String letraTipo(Tipos tipo){
         if(tipo == Tipos.Inteiro)
             return "d";
@@ -66,6 +67,7 @@ public class Utils {
             return "";
     }
     
+    // Verifica o tipo de um determinado context.
     public static Tipos verificarTipo(List<TabelaDeSimbolos> escopos, laParser.ExpressaoContext ctx){
         Tipos ladoEsquerdo = verificarTipo(escopos, ctx.tl);
         
@@ -224,6 +226,7 @@ public class Utils {
         return verificarTipo(escopos, ctx.t);
     }
     
+    // Cria uma lista de intervalos a partir da linguagem algorítmica
     public static List<String> intervalos(laParser.ConstantesContext ctx){
         List<String> interv = new ArrayList();
         
@@ -244,6 +247,7 @@ public class Utils {
         return interv;
     }
     
+    // Retorna se é uma cadeia ou não baseado em um contexto.
     public static Boolean cadeia(laParser.ExpressaoContext ctx){
         if(!ctx.op.isEmpty())
             return false;

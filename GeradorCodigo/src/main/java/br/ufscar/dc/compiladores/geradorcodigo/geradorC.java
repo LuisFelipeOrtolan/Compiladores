@@ -5,75 +5,72 @@ import br.ufscar.dc.compiladores.analisadorsemantico.laParser;
 import java.util.List;
 
 public class geradorC extends laBaseVisitor<Tipos>{
-    StringBuilder saida;
-    TabelaDeSimbolos tabela;
-    TabelaDeFuncoes funcs;
-    Escopos aninhados = new Escopos();
     
-    boolean func = false;
+    Escopos aninhados = new Escopos(); // Escopos do programa.
+    boolean func = false; // Variável que indica se está tratando uma funcão ou não.
+    TabelaDeFuncoes funcs; // Tabela com as funcões.
+    StringBuilder saida; // Onde será escrito o programa em C.
     
     public geradorC(){
-        saida = new StringBuilder();
-        this.tabela = new TabelaDeSimbolos();
-        this.funcs = new TabelaDeFuncoes();
+        saida = new StringBuilder(); // Inicia o StringBuilder.
+        this.funcs = new TabelaDeFuncoes(); // Inicia a tabela de funcões.
     }
     
     @Override
     public Tipos visitPrograma(laParser.ProgramaContext ctx){
-        aninhados.criarNovoEscopo();
-        saida.append("#include <stdio.h>\n");
+        aninhados.criarNovoEscopo(); // Cria escopo das variáveis globais.
+        saida.append("#include <stdio.h>\n"); // Escreve as bibliotecas básicas.
         saida.append("#include <stdlib.h>\n");
         
-        visitDeclaracoes(ctx.decls);
+        visitDeclaracoes(ctx.decls); // Escreve declaracões globais.
         
         saida.append("\n");
-        saida.append("int main(){\n");
+        saida.append("int main(){\n"); // Inicia a funcão main.
         
-        aninhados.criarNovoEscopo();
-        visitCorpo(ctx.c);
-        aninhados.abandonarEscopo();
+        aninhados.criarNovoEscopo(); // Cria o escopo da funcão main.
+        visitCorpo(ctx.c); // Visita o conteúdo do main.
+        aninhados.abandonarEscopo(); // Encerra o escopo da funcão main.
         
-        saida.append("return 0;\n}\n");
-        aninhados.abandonarEscopo();
+        saida.append("return 0;\n}\n"); // Encerra a funcão.
+        aninhados.abandonarEscopo(); // Encerra o escopo global.
         return null;    
     }
     
     @Override
     public Tipos visitDeclaracao_local(laParser.Declaracao_localContext ctx){
-        if(ctx.decl != null){
-            if(ctx.vars.tip.reg != null)
-                aninhados.criarNovoEscopo();
-            visitVariavel(ctx.vars);
-            if(ctx.vars.tip.reg != null){
-                TabelaDeSimbolos ts = aninhados.obterEscopoAtual();
-                aninhados.abandonarEscopo();
-                aninhados.obterEscopoAtual().inserir(ctx.vars.ident1.getText(), Tipos.Struct, ts);
-                for(int i = 0; i < ctx.vars.outrosIdents.size(); i++)
-                    aninhados.obterEscopoAtual().inserir(ctx.vars.outrosIdents.get(i).getText(), Tipos.Struct, ts);
+        if(ctx.decl != null){ // Se for um declare.
+            if(ctx.vars.tip.reg != null) // Verifica se é a declaracão de um registro.
+                aninhados.criarNovoEscopo(); // Se for, cria o escopo do registro.
+            visitVariavel(ctx.vars); // Visita as declaracões de variáveis.
+            if(ctx.vars.tip.reg != null){ // Se for declaracão de um registro,
+                TabelaDeSimbolos ts = aninhados.obterEscopoAtual(); // Obtém os escopo do registro.
+                aninhados.abandonarEscopo(); // Descarta da pilha de escopos atual.
+                aninhados.obterEscopoAtual().inserir(ctx.vars.ident1.getText(), Tipos.Struct, ts); // E insere o escopo na variável que é do tipo struct.
+                for(int i = 0; i < ctx.vars.outrosIdents.size(); i++) // Para cada um dos outros identificadores, 
+                    aninhados.obterEscopoAtual().inserir(ctx.vars.outrosIdents.get(i).getText(), Tipos.Struct, ts); // Também insere o escopo.
             }
-            saida.append(";\n");
+            saida.append(";\n"); // Encerra declaracão.
         }
-        else if (ctx.con != null){
-            saida.append("const ");
-            visitTipo_basico(ctx.tbas);
-            Tipos aux = Utils.verificarTipo(aninhados.percorrerEscoposAninhados(), ctx.tbas);
-            if(aux == Tipos.Literal){
-                saida.append("[80]");
+        else if (ctx.con != null){ // Se for uma variável constante.
+            saida.append("const "); // Declara como constante.
+            Tipos aux = visitTipo_basico(ctx.tbas); // Escreve o tipo dela.
+            if(aux == Tipos.Literal){ // Se for uma variável do tipo string,
+                saida.append("[80]"); // Coloca um tamanho de 80 caracteres pra ela.
             }
-            saida.append(" ");
-            saida.append(ctx.id.getText());
-            saida.append(" = ");
-            visitValor_constante(ctx.val);
-            saida.append(";\n");
-        } else {
+            saida.append(" "); 
+            saida.append(ctx.id.getText()); // Imprime o identificador da variável.
+            saida.append(" = "); // Atribuicão.
+            visitValor_constante(ctx.val); // O valor atribuído.
+            saida.append(";\n"); // Encerra o comando.
+        } else { // Declarando tipo de struct.
             saida.append("typedef ");
-            aninhados.criarNovoEscopo();
-            visitTipo(ctx.t);
-            TabelaDeSimbolos ts = aninhados.obterEscopoAtual();
-            aninhados.abandonarEscopo();
-            saida.append(ctx.id.getText());
-            aninhados.obterEscopoAtual().inserir(ctx.id.getText(), Tipos.Struct, ts);
-            saida.append(";\n");
+            aninhados.criarNovoEscopo(); // Cria o escopo do struct.
+            visitTipo(ctx.t); // Escreve as variáveis do struct.
+            TabelaDeSimbolos ts = aninhados.obterEscopoAtual(); // Obtém o escopo do struct.
+            aninhados.abandonarEscopo(); // Descarta o escopo do struct.
+            saida.append(ctx.id.getText()); // Escreve o nome do tipo de struct.
+            aninhados.obterEscopoAtual().inserir(ctx.id.getText(), Tipos.Struct, ts); // Adiciona o tipo nos escopos, junto com o escopo do struct.
+            saida.append(";\n"); // Encerra declaracão.
         }
         
         return null;
@@ -81,22 +78,23 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitVariavel(laParser.VariavelContext ctx){
-        Tipos variavel = visitTipo(ctx.tip);
+        Tipos variavel = visitTipo(ctx.tip); // Escreve o tipo das variáveis.
         saida.append(" ");
         
-        TabelaDeSimbolos struct = null;
+        TabelaDeSimbolos struct = null; // Cria uma tabela para o escopo de um struct.
         
-        for(TabelaDeSimbolos ts : aninhados.percorrerEscoposAninhados())
-                if(ts.verificar(ctx.tip.getText()) != null)
-                    struct = ts.verificar(ctx.tip.getText()).tabelaParaStruct;
+        for(TabelaDeSimbolos ts : aninhados.percorrerEscoposAninhados()) // Para cada escopo,
+                if(ts.verificar(ctx.tip.getText()) != null) // Verifica se o tipo está nos escopos, caso esteja, é um tipo de struct.
+                    struct = ts.verificar(ctx.tip.getText()).tabelaParaStruct; // Copia o escopo do tipo pra essa variável.
 
-        aninhados.obterEscopoAtual().inserir(ctx.ident1.text.getText(), variavel, struct);
+        aninhados.obterEscopoAtual().inserir(ctx.ident1.text.getText(), variavel, struct); // Insere a variável no escopo atual.
         
-        visitIdentificador(ctx.ident1);
+        visitIdentificador(ctx.ident1); // Escreve a primeira variável.
 
-        if(variavel == Tipos.Literal)
+        if(variavel == Tipos.Literal) // Se for uma variável string, adiciona um tamanho de 80 para ela.
             saida.append("[80]");
 
+        // Refaz esse processo para as demais variáveis.
         for(int i = 0; i < ctx.outrosIdents.size(); i++){
             saida.append(", ");
             visitIdentificador(ctx.outrosIdents.get(i));
@@ -117,36 +115,36 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitTipo_estendido(laParser.Tipo_estendidoContext ctx){
-        visitTipo_basico_ident(ctx.t);
-        if(ctx.chapeu != null)
+        Tipos t = visitTipo_basico_ident(ctx.t); // Escreve o tipo/
+        if(ctx.chapeu != null) // Se for um ponteiro, adiciona o *.
             saida.append(" *");
         
-        if(func){
+        if(func){ // Se for uma funcão e for uma string adiciona o símbolo de ponteiro.
             if(Utils.verificarTipo(aninhados.percorrerEscoposAninhados(), ctx.t) == Tipos.Literal)
                 saida.append(" *");
         }
         
-        return Utils.verificarTipo(aninhados.percorrerEscoposAninhados(), ctx.t);
+        return t; // Retorna o tipo da variável.
     }
     
     @Override
     public Tipos visitTipo_basico_ident(laParser.Tipo_basico_identContext ctx){
-        if(ctx.id != null){
-            saida.append(ctx.id.getText());
-            List<TabelaDeSimbolos> escopos = aninhados.percorrerEscoposAninhados();
-            for(TabelaDeSimbolos ts : escopos){
-                if(ts.verificar(ctx.id.getText()) != null)
-                    return ts.verificar(ctx.id.getText()).tipo;
+        if(ctx.id != null){ // Se for um identificador.
+            saida.append(ctx.id.getText()); // Escreve o identificador.
+            for(TabelaDeSimbolos ts : aninhados.percorrerEscoposAninhados()){ // Percorre em cada escopo.
+                if(ts.verificar(ctx.id.getText()) != null) // Se encontrar o identificador,
+                    return ts.verificar(ctx.id.getText()).tipo; // Retorna o tipo dele.
             }
         }
         else
-            return visitTipo_basico(ctx.tbas);
+            return visitTipo_basico(ctx.tbas); // Escreve o tipo dele.
        
         return null;
     }
     
     @Override
     public Tipos visitTipo_basico(laParser.Tipo_basicoContext ctx){
+        // Escreve e retorna o tipo de acordo.
         if(ctx.i != null){
             saida.append("int");
             return Tipos.Inteiro;
@@ -167,19 +165,19 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitIdentificador(laParser.IdentificadorContext ctx){
-        saida.append(ctx.text.getText());
+        saida.append(ctx.text.getText()); // Escreve o identificador.
             
-        for(int i = 0; i < ctx.text1.size(); i++){
+        for(int i = 0; i < ctx.text1.size(); i++){ // Para cada campo que ele tiver, escreve.
             saida.append(".");
             saida.append(ctx.text1.get(i).getText());
         }
-        visitDimensao(ctx.d);
+        visitDimensao(ctx.d); // Escreve a dimensao dele.
         
-        for(TabelaDeSimbolos ts : aninhados.percorrerEscoposAninhados()){
-            if(ts.verificar(ctx.text.getText()) != null)
-                if(!ctx.text1.isEmpty())
+        for(TabelaDeSimbolos ts : aninhados.percorrerEscoposAninhados()){ // Procura em cada escopo.
+            if(ts.verificar(ctx.text.getText()) != null) // Se achar a variável.
+                if(!ctx.text1.isEmpty()) // Se ela tiver campo, retorna o tipo do campo.
                     return ts.verificar(ctx.text.getText()).tabelaParaStruct.verificar(ctx.text1.get(0).getText()).tipo;
-                else
+                else // Caso contrário, retorna o tipo dela.
                     return ts.verificar(ctx.text.getText()).tipo;
         }
         
@@ -189,22 +187,21 @@ public class geradorC extends laBaseVisitor<Tipos>{
     @Override
     public Tipos visitCmdLeia(laParser.CmdLeiaContext ctx){
         Tipos leia = null;
-        List<TabelaDeSimbolos> escopos = aninhados.percorrerEscoposAninhados();
-        String nomesVariaveis = "";
+        String nomesVariaveis = ""; // Todos os nomes das variáveis.
         
-        for(TabelaDeSimbolos ts: escopos)
-            if(ts.verificar(ctx.id1.text.getText()) != null){
-                leia = ts.verificar(ctx.id1.text.getText()).tipo;
-                if(leia == Tipos.Struct){
+        for(TabelaDeSimbolos ts: aninhados.percorrerEscoposAninhados()) // Para cada escopo,
+            if(ts.verificar(ctx.id1.text.getText()) != null){ // Encontra o identificador.
+                leia = ts.verificar(ctx.id1.text.getText()).tipo; // Guarda o tipo do identificador.
+                if(leia == Tipos.Struct){ // Se for uma struct, desobre o tipo do campo.
                     TabelaDeSimbolos struct = ts.verificar(ctx.id1.text.getText()).tabelaParaStruct;
                     leia = struct.verificar(ctx.id1.text1.get(0).getText()).tipo;
                 }
             }
         
-        if(leia == Tipos.Literal){
-            saida.append("gets(");
-            saida.append(ctx.id1.text.getText());
-            if(ctx.id1.ponto != null){
+        if(leia == Tipos.Literal){ // Se a variável for uma string, tem que ser lido com o comando gets.
+            saida.append("gets("); 
+            saida.append(ctx.id1.text.getText()); // Escreve o identificador.
+            if(ctx.id1.ponto != null){ // Escreve campos se houverem.
                 saida.append(".");
                 saida.append(ctx.outrosids.get(0).getText());
             }
@@ -212,25 +209,25 @@ public class geradorC extends laBaseVisitor<Tipos>{
             return null;
         }
         
-        saida.append("scanf(\"%");
+        saida.append("scanf(\"%"); // Caso não seja string, é lido com scanf.
         
-        for(TabelaDeSimbolos ts: escopos)
-            if(ts.verificar(ctx.id1.text.getText()) != null){
-                leia = ts.verificar(ctx.id1.text.getText()).tipo;
-                if(leia != Tipos.Struct){
-                    saida.append(Utils.letraTipo(leia));
-                    nomesVariaveis = nomesVariaveis + "&" + ctx.id1.text.getText() + " ,";
+        for(TabelaDeSimbolos ts: aninhados.percorrerEscoposAninhados()) // Procura em cada escopo.
+            if(ts.verificar(ctx.id1.text.getText()) != null){ // Quando achar,
+                leia = ts.verificar(ctx.id1.text.getText()).tipo; // Guarda o tipo da variável.
+                if(leia != Tipos.Struct){ // Se não for um struct,
+                    saida.append(Utils.letraTipo(leia)); // Escreve a letra que representa o tipo.
+                    nomesVariaveis = nomesVariaveis + "&" + ctx.id1.text.getText() + " ,"; // Guarda na lista de variáveis o nome da variável atual.
                 }
-                else{
+                else{ // Caso seja um strut, procura e escreve o tipo do campo.
                     TabelaDeSimbolos struct = ts.verificar(ctx.id1.text.getText()).tabelaParaStruct;
                     saida.append(Utils.letraTipo(struct.verificar(ctx.id1.text1.get(0).getText()).tipo));
                     nomesVariaveis = nomesVariaveis + "&" + ctx.id1.text1.get(0).getText() + " ,";
                 }
                 
             }
-        
+        // Faz o mesmo processo para os demais campos.
         for(int i = 0; i < ctx.outrosids.size(); i++){
-            for(TabelaDeSimbolos ts : escopos)
+            for(TabelaDeSimbolos ts : aninhados.percorrerEscoposAninhados())
                 if(ts.verificar(ctx.outrosids.get(i).text.getText()) != null){
                     leia = ts.verificar(ctx.outrosids.get(i).text.getText()).tipo;
                     if(leia != Tipos.Struct){
@@ -248,7 +245,7 @@ public class geradorC extends laBaseVisitor<Tipos>{
         }
         
         saida.append("\", ");
-        saida.append(nomesVariaveis.substring(0,nomesVariaveis.length() -2));
+        saida.append(nomesVariaveis.substring(0,nomesVariaveis.length() -2)); // Remove o espaco e a vírgula a mais do último campo.
         saida.append(");\n");
 
         return null;
@@ -258,28 +255,29 @@ public class geradorC extends laBaseVisitor<Tipos>{
     public Tipos visitCmdEscreva(laParser.CmdEscrevaContext ctx){
         boolean algumIdentificador = false;
         
-        int inicio = 0;
-        int fim = 0;
+        int inicio = 0; // Variável que vai indicar onde comeca a string a ser escrita.
+        int fim = 0; // Variável que vai indicar onde termina a string a ser escrita.
         
-        saida.append("printf(\"");
-        if(Utils.cadeia(ctx.exp1)){
-            if(ctx.exp1.getText().charAt(0) == '\"')
-                inicio = 1;
+        saida.append("printf(\""); // Escreve a funcão printf.
+        if(Utils.cadeia(ctx.exp1)){ // Verifica se é uma cadeia.
+            if(ctx.exp1.getText().charAt(0) == '\"') // Se o primeiro caracter for aspas,
+                inicio = 1; // Marca para comecar depois das aspas.
             
-            if(ctx.exp1.getText().charAt(ctx.exp1.getText().length() - 1) == '\"')
-                fim = ctx.exp1.getText().length() - 1;
-            else
+            if(ctx.exp1.getText().charAt(ctx.exp1.getText().length() - 1) == '\"') // Se o último caracter for aspas,
+                fim = ctx.exp1.getText().length() - 1; // Marca para terminar depois das aspas.
+            else // Se não, termina no último caracter mesmo.
                 fim = ctx.exp1.getText().length();
             
-            saida.append(ctx.exp1.getText().substring(inicio, fim));
+            saida.append(ctx.exp1.getText().substring(inicio, fim)); // Escreve a cadeia.
         }
-        else{
+        else{ // Se não for uma cadeia.
             List<TabelaDeSimbolos> escopos = aninhados.percorrerEscoposAninhados();
-            saida.append("%");
-            saida.append(Utils.letraTipo(Utils.verificarTipo(escopos, ctx.exp1)));
-            algumIdentificador = true;
+            saida.append("%"); // Escreve o porcento.
+            saida.append(Utils.letraTipo(Utils.verificarTipo(escopos, ctx.exp1))); // Escreve a letra que representa o identificador.
+            algumIdentificador = true; // Marca que existem identificadores sendo escritos.
         }
-
+        
+        // Repete o proesso para as demais expressões.
         for(int i = 0; i < ctx.outrosexp.size(); i++){
             if(!Utils.cadeia(ctx.outrosexp.get(i))){    
                 if(saida.charAt(saida.length() -1) != ' ')
@@ -303,15 +301,15 @@ public class geradorC extends laBaseVisitor<Tipos>{
             
         }
         
-        saida.append("\"");
+        saida.append("\""); // Fecha a cadeia sendo escrita.
         if(algumIdentificador){
             
-        
-            if(!Utils.cadeia(ctx.exp1)){
+            if(!Utils.cadeia(ctx.exp1)){ // Se não for uma cadeia, 
                 saida.append(", ");
-                visitExpressao(ctx.exp1);
+                visitExpressao(ctx.exp1); // Escreve a expressão.
             }
-
+            
+            // Repete par as demais expressões.
             for(int i = 0; i < ctx.outrosexp.size(); i++)
                 if(!Utils.cadeia(ctx.outrosexp.get(i))){
                     saida.append(", ");
@@ -326,13 +324,13 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitExpressao(laParser.ExpressaoContext ctx){
-        Tipos ladoEsquerdo = visitTermo_logico(ctx.tl);
+        Tipos ladoEsquerdo = visitTermo_logico(ctx.tl); // Escreve o termo lógico.
         
         for(int i = 0; i < ctx.outrostl.size(); i++){ 
             saida.append(" ");
-            visitOp_logico_1(ctx.op.get(i));
+            visitOp_logico_1(ctx.op.get(i)); // Escreve o sinal da operacão.
             saida.append(" ");
-            Tipos termo_logico = visitTermo_logico(ctx.outrostl.get(i));
+            Tipos termo_logico = visitTermo_logico(ctx.outrostl.get(i));  // Escreve o termo lógico.
             ladoEsquerdo = Utils.tiposCompativeis(termo_logico, ladoEsquerdo);
         }
         
@@ -341,19 +339,19 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitOp_logico_1(laParser.Op_logico_1Context ctx){
-        saida.append("||");
+        saida.append("||"); // Escreve o sinal do operador ou.
         return null;
     }
 
     @Override
     public Tipos visitTermo_logico(laParser.Termo_logicoContext ctx){
-        Tipos ladoEsquerdo = visitFator_logico(ctx.f1);
+        Tipos ladoEsquerdo = visitFator_logico(ctx.f1);  // Escreve o fator lógico.
         
         for(int i = 0; i < ctx.outrosf.size(); i++){
             saida.append(" ");
-            visitOp_logico_2(ctx.op.get(i));
+            visitOp_logico_2(ctx.op.get(i)); // Escreve o sinal da operacão.
             saida.append(" ");
-            Tipos fator_logico = visitFator_logico(ctx.outrosf.get(i));
+            Tipos fator_logico = visitFator_logico(ctx.outrosf.get(i)); // Escreve o fator lógico.
             ladoEsquerdo = Utils.tiposCompativeis(fator_logico, ladoEsquerdo);
         }
         
@@ -362,17 +360,17 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitOp_logico_2(laParser.Op_logico_2Context ctx){
-        saida.append("&&");
+        saida.append("&&"); // Escreve o operador e.
         return null;
     }
 
     @Override
     public Tipos visitFator_logico(laParser.Fator_logicoContext ctx){
         if(ctx.not != null)
-            saida.append("!");
+            saida.append("!"); // Escreve o sinal de not.
         
         
-        Tipos resultado = visitParcela_logica(ctx.plogica);
+        Tipos resultado = visitParcela_logica(ctx.plogica); // Escreve a parcela lógica.
         
         if(ctx.not != null)
             return Tipos.Logico;
@@ -383,26 +381,26 @@ public class geradorC extends laBaseVisitor<Tipos>{
     @Override
     public Tipos visitParcela_logica(laParser.Parcela_logicaContext ctx){
         if(ctx.v != null){
-            saida.append("true");
+            saida.append("true"); // Escreve verdadeiro.
             return Tipos.Logico;
         }
         else if(ctx.f != null){
-            saida.append("false");
+            saida.append("false"); // Escreve falso.
             return Tipos.Logico;
         }
         else
-            return visitExp_relacional(ctx.exp);
+            return visitExp_relacional(ctx.exp); // Escreve as expressões relacionais.
     }
     
     @Override
     public Tipos visitExp_relacional(laParser.Exp_relacionalContext ctx){
-        Tipos ladoEsquerdo = visitExp_aritmetica(ctx.exp1);
+        Tipos ladoEsquerdo = visitExp_aritmetica(ctx.exp1); // Escreve a expressão aritmética.
         
         for(int i = 0; i < ctx.outrasexp.size(); i++){
             saida.append(" ");
-            visitOp_relacional(ctx.oprel);
+            visitOp_relacional(ctx.oprel); // Escreve o operador relacional.
             saida.append(" ");
-            ladoEsquerdo = Utils.tiposCompativeis(ladoEsquerdo, visitExp_aritmetica(ctx.outrasexp.get(i)));
+            ladoEsquerdo = Utils.tiposCompativeis(ladoEsquerdo, visitExp_aritmetica(ctx.outrasexp.get(i))); // Escreve a expressão aritmética.
         }
         
         return ladoEsquerdo;
@@ -410,6 +408,7 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitOp_relacional(laParser.Op_relacionalContext ctx){
+        // Escreve o sinal relacional desejado.
         if(ctx.maior != null)
             saida.append(">");
         else if(ctx.menor != null)
@@ -429,13 +428,13 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitExp_aritmetica(laParser.Exp_aritmeticaContext ctx){
-        Tipos ladoEsquerdo = visitTermo(ctx.termo1);
+        Tipos ladoEsquerdo = visitTermo(ctx.termo1); // Escreve o termo.
         
         for(int i = 0; i < ctx.outrostermos.size(); i++){
             saida.append(" ");
-            visitOp1(ctx.op.get(i));
+            visitOp1(ctx.op.get(i)); // Escreve o operador.
             saida.append(" ");
-            Tipos t = visitTermo(ctx.outrostermos.get(i));
+            Tipos t = visitTermo(ctx.outrostermos.get(i)); // Escreve o termo.
             ladoEsquerdo = Utils.tiposCompativeis(ladoEsquerdo, t);
         }
         
@@ -444,6 +443,7 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitOp1(laParser.Op1Context ctx){
+        // Escreve o operador correspondente.
         if(ctx.mais != null)
             saida.append("+");
         else
@@ -453,14 +453,14 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitTermo(laParser.TermoContext ctx){
-        Tipos ladoEsquerdo = visitFator(ctx.fator1);
+        Tipos ladoEsquerdo = visitFator(ctx.fator1); // Escreve o fator.
         
         for(int i = 0; i < ctx.outrosfatores.size(); i++){
             saida.append(" ");
-            visitOp2(ctx.op.get(i));
+            visitOp2(ctx.op.get(i)); // Escreve o operador.
             saida.append(" ");
             
-            Tipos t  = visitFator(ctx.outrosfatores.get(i));
+            Tipos t  = visitFator(ctx.outrosfatores.get(i)); // Escreve o fator.
             ladoEsquerdo = Utils.tiposCompativeis(ladoEsquerdo, t);
         }
         
@@ -469,6 +469,7 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitOp2(laParser.Op2Context ctx){
+        // Escreve o operador correspondente.
         if(ctx.vezes != null)
             saida.append("*");
         else
@@ -479,14 +480,14 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitFator(laParser.FatorContext ctx){
-        Tipos ladoEsquerdo = visitParcela(ctx.parcela1);
+        Tipos ladoEsquerdo = visitParcela(ctx.parcela1); // Escreve a parcela.
         
         for(int i = 0; i < ctx.outrasparcelas.size(); i++){
             saida.append(" ");
-            visitOp3(ctx.op3);
+            visitOp3(ctx.op3); // Escreve a operacão.
             saida.append(" ");
             
-            Tipos t = visitParcela(ctx.outrasparcelas.get(i));
+            Tipos t = visitParcela(ctx.outrasparcelas.get(i)); // Escreve a parcela.
             ladoEsquerdo = Utils.tiposCompativeis(ladoEsquerdo, t);
         }
         
@@ -495,21 +496,21 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitOp3(laParser.Op3Context ctx){
-        saida.append("%");
+        saida.append("%"); // Escreve o operador de módulo.
         return null;
     }
     
     @Override
     public Tipos visitParcela(laParser.ParcelaContext ctx){
-        if(ctx.opuna != null)
+        if(ctx.opuna != null) // Se houver um número negativo, multiplica por menos 1.
             saida.append("(-1) *");
         
         Tipos t;
         
         if(ctx.puna != null)
-            t = visitParcela_unario(ctx.puna);
+            t = visitParcela_unario(ctx.puna); // Escreve Parcela unária se tiver.
         else
-            t = visitParcela_nao_unario(ctx.pnuna);
+            t = visitParcela_nao_unario(ctx.pnuna); // Escreve Parcela não unária se tiver.
         
         return t;
     }
@@ -517,34 +518,33 @@ public class geradorC extends laBaseVisitor<Tipos>{
     @Override
     public Tipos visitParcela_unario(laParser.Parcela_unarioContext ctx){
         Tipos t = null;
-        if(ctx.iden != null){
-            if(ctx.chapeu != null)
+        if(ctx.iden != null){ // Se for um identificador.
+            if(ctx.chapeu != null) // Se for um ponteiro, escreve *.
                 saida.append("*");
-            t = visitIdentificador(ctx.iden);
+            t = visitIdentificador(ctx.iden); // Escreve o identificador.
         }
-        else if(ctx.inte != null){
-            saida.append(ctx.inte.getText());
+        else if(ctx.inte != null){ // Se for um inteiro.
+            saida.append(ctx.inte.getText()); // Escreve o inteiro.
             t = Tipos.Inteiro;
         }
-        else if(ctx.real != null){
-            saida.append(ctx.real.getText());
+        else if(ctx.real != null){ // Se for um float.
+            saida.append(ctx.real.getText()); // Escreve o float.
             t = Tipos.Real;
         }
-        else if(ctx.exp_par != null){
-            saida.append("(");
-            t = visitExpressao(ctx.exp_par);
+        else if(ctx.exp_par != null){ // Se for uma expressão entre parênteses.
+            saida.append("("); // Escreve os parênteses,
+            t = visitExpressao(ctx.exp_par); // E a expressão.
             saida.append(")");
         }
-        else if(ctx.id != null){
-            List<TabelaDeSimbolos> escopos = aninhados.percorrerEscoposAninhados();
-            for(TabelaDeSimbolos ts: escopos){
+        else if(ctx.id != null){ // Se for uma funcão.
+            for(TabelaDeSimbolos ts: aninhados.percorrerEscoposAninhados()){
                 if(ts.verificar(ctx.id.getText()) != null)
-                    t = ts.verificar(ctx.id.getText()).tipo;
+                    t = ts.verificar(ctx.id.getText()).tipo; // Verifica o tipo da funcão.
             }
             
-            saida.append(ctx.id.getText());
-            saida.append("(");
-            visitExpressao(ctx.exp1);
+            saida.append(ctx.id.getText()); // Escreve o identificador da funcão.
+            saida.append("("); // Escreve os parênteses.
+            visitExpressao(ctx.exp1); // Escreve os parâmetros.
             for(int i = 0; i < ctx.outrasexps.size(); i++){
                 saida.append(", ");
                 visitExpressao(ctx.outrasexps.get(i));
@@ -557,15 +557,15 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitCmdAtribuicao(laParser.CmdAtribuicaoContext ctx){
-        if(ctx.chap != null)
+        if(ctx.chap != null) // Se for um ponteiro, escreve *.
             saida.append("*");
         
-        if(Utils.verificarTipo(aninhados.percorrerEscoposAninhados(), ctx.id) != Tipos.Literal){
-            visitIdentificador(ctx.id);
-            saida.append(" = ");
-            visitExpressao(ctx.exp);
+        if(Utils.verificarTipo(aninhados.percorrerEscoposAninhados(), ctx.id) != Tipos.Literal){ // Se não for uma string,
+            visitIdentificador(ctx.id); // Escreve o identificador.
+            saida.append(" = "); // Atribui com o sinal de igual.
+            visitExpressao(ctx.exp); // Escreve a expressão.
         }
-        else{
+        else{ // Se for uma string, faz o mesmo processo com o comando strcpy.
             saida.append("strcpy(");
             visitIdentificador(ctx.id);
             saida.append(", ");
@@ -579,15 +579,15 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitCmdSe(laParser.CmdSeContext ctx){
-        saida.append("if( ");
-        visitExpressao(ctx.exp);
+        saida.append("if( "); // Escreve o comando if.
+        visitExpressao(ctx.exp); // Escreve a expressão do if.
         saida.append(" ){\n");
-        for(int i = 0; i < ctx.cmds.size(); i++)
-            visitCmd(ctx.cmds.get(i));
+        for(int i = 0; i < ctx.cmds.size(); i++) // Escreve comandos do if.
+            visitCmd(ctx.cmds.get(i)); 
         saida.append("}\n");
-        if(ctx.els != null){
+        if(ctx.els != null){ // Caso tenha um else, escreve o else.
             saida.append("else{\n");
-            for(int i = 0; i < ctx.elsecmd.size(); i++){
+            for(int i = 0; i < ctx.elsecmd.size(); i++){ // Escreve os comandos do else.
                 visitCmd(ctx.elsecmd.get(i));
             }
             saida.append("}\n"); 
@@ -598,13 +598,13 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitCmdCaso(laParser.CmdCasoContext ctx){
-        saida.append("switch (");
-        visitExp_aritmetica(ctx.exp);
+        saida.append("switch ("); // Escreve o comando switch.
+        visitExp_aritmetica(ctx.exp); // Escreve a expressão do switch.
         saida.append(") {\n");
-        visitSelecao(ctx.sel);
-        if(ctx.els != null){
+        visitSelecao(ctx.sel); // Escreve as selecões.
+        if(ctx.els != null){ // Escreve o ocomando default caso haja.
             saida.append("default:\n");
-            for(int i = 0; i < ctx.cmds.size(); i++)
+            for(int i = 0; i < ctx.cmds.size(); i++) // Escreva os comandos do default.
                 visitCmd(ctx.cmds.get(i));
         }
         
@@ -614,30 +614,30 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitItem_selecao(laParser.Item_selecaoContext ctx){
-        List<String> intervalos = Utils.intervalos(ctx.cte);
+        List<String> intervalos = Utils.intervalos(ctx.cte); // Lista com os intervalos da selecão.
         
         for(int i = 0; i < intervalos.size(); i = i + 2){
-            int comeco = Integer.parseInt(intervalos.get(i));
-            if(!intervalos.get(i+1).equals("-")){
-                int fim = Integer.parseInt(intervalos.get(i+1));
+            int comeco = Integer.parseInt(intervalos.get(i)); // Insere o primeiro número do intervalo.
+            if(!intervalos.get(i+1).equals("-")){ // Se for de fato um intervalo,
+                int fim = Integer.parseInt(intervalos.get(i+1)); // Insere o último número do intervalo.
                 
-                for(int j = comeco; j < fim+1; j++){
-                    saida.append("case ");
-                    saida.append(j);
+                for(int j = comeco; j < fim+1; j++){ // Para cada número do intervalo,
+                    saida.append("case "); // Escre case.
+                    saida.append(j); // E o número do item/
                     saida.append(":\n");
                 } 
             }
-            else{
+            else{ // Caso precise escrever só uma vez.
                saida.append("case ");
                saida.append(comeco);
                saida.append(":\n");
             }
         }
         
-        for(int i = 0; i < ctx.cmds.size(); i++)
+        for(int i = 0; i < ctx.cmds.size(); i++) // Escreve os comandos para aquela selecão.
             visitCmd(ctx.cmds.get(i));
         
-        if(ctx.cmds.size() != 0)
+        if(ctx.cmds.size() != 0) // Se houver um comando, insere um break;
             saida.append("break;\n");
         
         return null;
@@ -645,20 +645,20 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitCmdPara(laParser.CmdParaContext ctx){
-        saida.append("for(");
-        saida.append(ctx.id.getText());
-        saida.append(" = ");
-        visitExp_aritmetica(ctx.exp1);
-        saida.append("; ");
-        saida.append(ctx.id.getText());
-        saida.append(" <= ");
-        visitExp_aritmetica(ctx.exp2);
-        saida.append("; ");
-        saida.append(ctx.id.getText());
-        saida.append("++) {\n");
-        for(int i = 0; i < ctx.cmds.size(); i++)
+        saida.append("for("); // Escreve o comando for.
+        saida.append(ctx.id.getText()); // Escreve a variável do for.
+        saida.append(" = "); // Comando de atribuicão.
+        visitExp_aritmetica(ctx.exp1); // Escreve a expressão de atribuicão.
+        saida.append("; "); // Encerra o primeiro campo do for.
+        saida.append(ctx.id.getText()); // Escreve a variável.
+        saida.append(" <= "); // Escreve o símbolo de até.
+        visitExp_aritmetica(ctx.exp2); // Escreve a expressão do até.
+        saida.append("; "); // Encerra o segundo campo do for.
+        saida.append(ctx.id.getText()); // Escreve a variável.
+        saida.append("++) {\n"); // Incrementa e abre o for.
+        for(int i = 0; i < ctx.cmds.size(); i++) // Escreve os comandos do for.
             visitCmd(ctx.cmds.get(i));
-        saida.append("}\n");
+        saida.append("}\n"); // Encerra o for.
         
         return null;
     }
@@ -666,10 +666,10 @@ public class geradorC extends laBaseVisitor<Tipos>{
     @Override
     public Tipos visitCmdEnquanto(laParser.CmdEnquantoContext ctx){
         
-        saida.append("while (");
-        visitExpressao(ctx.exp);
+        saida.append("while ("); // Escreve o comando while.
+        visitExpressao(ctx.exp); // Escreve a expressão do while.
         saida.append(") {\n");
-        for(int i = 0; i < ctx.lcmd.size(); i++)
+        for(int i = 0; i < ctx.lcmd.size(); i++) // Escreve os comandos do while
             visitCmd(ctx.lcmd.get(i));
         
         saida.append("}\n");
@@ -679,11 +679,11 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitCmdFaca(laParser.CmdFacaContext ctx){
-        saida.append("do {\n");
-        for(int i = 0; i < ctx.lcmd.size(); i++)
+        saida.append("do {\n"); // Escreve o comando do.
+        for(int i = 0; i < ctx.lcmd.size(); i++) // Escreve os comandos do do while.
             visitCmd(ctx.lcmd.get(i));
         saida.append("} while(");
-        visitExpressao(ctx.exp);
+        visitExpressao(ctx.exp); // Escreve a expressão.
         saida.append(");\n");
         
         return null;
@@ -691,36 +691,36 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitParcela_nao_unario(laParser.Parcela_nao_unarioContext ctx){
-        if(ctx.comercial != null)
+        if(ctx.comercial != null) // Se tiver um e comercial, escreve.
             saida.append("&");
         
-        if(ctx.cad != null){
+        if(ctx.cad != null){ // Se tiver uma cadeia, escreve cadeia.
             saida.append(ctx.cad.getText().substring(0, ctx.cad.getText().length()));
             return Tipos.Literal;
         }
         else
-            return visitIdentificador(ctx.id);
+            return visitIdentificador(ctx.id); // Escreve identificador, se houver.
     }
     
     @Override
     public Tipos visitValor_constante(laParser.Valor_constanteContext ctx){
-        if(ctx.cad != null){
+        if(ctx.cad != null){ // Se for uma cadeia, escreve a cadeia.
             saida.append(ctx.cad.getText());
             return Tipos.Literal;
         }
-        else if(ctx.in != null){
+        else if(ctx.in != null){ // Se for um inteiro, escreve um inteiro.
             saida.append(ctx.in.getText());
             return Tipos.Inteiro;
         }
-        else if(ctx.re != null){
+        else if(ctx.re != null){ // Se for um float, escreve o float.
             saida.append(ctx.re.getText());
             return Tipos.Real;
         }
-        else if(ctx.fa != null){
+        else if(ctx.fa != null){ // Se for false, escreve false.
             saida.append("false");
             return Tipos.Logico;
         }
-        else{
+        else{ // Se for true, escreve true.
             saida.append("true");
             return Tipos.Logico;
         }    
@@ -728,8 +728,8 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitRegistro(laParser.RegistroContext ctx){
-        saida.append("struct {\n");
-        for(int i = 0; i < ctx.vars.size(); i++){
+        saida.append("struct {\n"); // Escreve registro.
+        for(int i = 0; i < ctx.vars.size(); i++){ // Escreve as variáveis do struct.
             visitVariavel(ctx.vars.get(i));
             saida.append(";\n");
         }
@@ -740,42 +740,42 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitDeclaracao_global(laParser.Declaracao_globalContext ctx){
-        func = true;
+        func = true; // Marca que está tratando uma funcão.
         saida.append("\n");
-        if(ctx.proc != null){
-            saida.append("void ");
-            saida.append(ctx.id.getText());
-            aninhados.obterEscopoAtual().inserir(ctx.id.getText(), Tipos.Procedure);
+        if(ctx.proc != null){ // Se for um procedimento.
+            saida.append("void "); // Marca que o retorno é void.
+            saida.append(ctx.id.getText()); // Escreve o identificador do procedimento.
+            aninhados.obterEscopoAtual().inserir(ctx.id.getText(), Tipos.Procedure); // Adiciona no escopo o procedimento.
             saida.append("(");
-            aninhados.criarNovoEscopo();
-            if(ctx.par != null)
+            aninhados.criarNovoEscopo(); // Cria o escopo do procedimento.
+            if(ctx.par != null) // Escreve os parâmetros. 
                 visitParametros(ctx.par);
             saida.append("){\n");
-            for(int i = 0; i < ctx.decl.size(); i++){
+            for(int i = 0; i < ctx.decl.size(); i++){ // Escreve as declaracões local do procedimento.
                 visitDeclaracao_local(ctx.decl.get(i));
                 saida.append("\n");
             }
-            for(int i = 0; i < ctx.lcmd.size(); i++){
+            for(int i = 0; i < ctx.lcmd.size(); i++){ // Escreve os comandos do procedimento.
                 visitCmd(ctx.lcmd.get(i));
             }
             saida.append("}\n");
             aninhados.abandonarEscopo();
         }
         else{
-            Tipos t = visitTipo_estendido(ctx.tip);
+            Tipos t = visitTipo_estendido(ctx.tip); // Escreve o tipo da funcão.
             saida.append(" ");
-            saida.append(ctx.id.getText());
-            aninhados.obterEscopoAtual().inserir(ctx.id.getText(), t);
+            saida.append(ctx.id.getText()); // Escreve o identificador da funcão.
+            aninhados.obterEscopoAtual().inserir(ctx.id.getText(), t); // Insere a funcão no escopo.
             saida.append("(");
-            aninhados.criarNovoEscopo();
-            if(ctx.par != null)
+            aninhados.criarNovoEscopo(); // Cria o escopo da funcão.
+            if(ctx.par != null) // Escreve os parâmetros da funcão.
                 visitParametros(ctx.par);
             saida.append("){\n");
-            for(int i = 0; i < ctx.decl.size(); i++){
+            for(int i = 0; i < ctx.decl.size(); i++){ // Escreve as declaracões da funcão.
                 visitDeclaracao_local(ctx.decl.get(i));
                 saida.append("\n");
             }
-            for(int i = 0; i < ctx.lcmd.size(); i++){
+            for(int i = 0; i < ctx.lcmd.size(); i++){ // Escreve os comandos da funcão.
                 visitCmd(ctx.lcmd.get(i));
                 saida.append(";\n");
             }
@@ -789,11 +789,11 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitParametro(laParser.ParametroContext ctx){
-        Tipos tipo = visitTipo_estendido(ctx.tip);
+        Tipos tipo = visitTipo_estendido(ctx.tip); // Escreve o tipo.
         saida.append(" ");
-        visitIdentificador(ctx.id1);
-        aninhados.obterEscopoAtual().inserir(ctx.id1.text.getText(), tipo);
-        for(int i = 0; i < ctx.outrosids.size(); i++){
+        visitIdentificador(ctx.id1); // Escreve o identificador.
+        aninhados.obterEscopoAtual().inserir(ctx.id1.text.getText(), tipo); // Insere o parâmetro no escopo.
+        for(int i = 0; i < ctx.outrosids.size(); i++){ // Escreve os demais identificadores.
             saida.append(", ");
             visitIdentificador(ctx.outrosids.get(i));
             aninhados.obterEscopoAtual().inserir(ctx.outrosids.get(i).text.getText(), tipo);
@@ -804,9 +804,9 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitCmdChamada(laParser.CmdChamadaContext ctx){
-        saida.append(ctx.id1.getText());
+        saida.append(ctx.id1.getText()); // Escreve o identificador da chamada.
         saida.append("(");
-        visitExpressao(ctx.exp1);
+        visitExpressao(ctx.exp1); // Escreve as expressões das chamadas (parâmetros).
         for(int i = 0; i < ctx.outrasexp.size(); i++){
             saida.append(", ");
             visitExpressao(ctx.outrasexp.get(i));
@@ -815,14 +815,14 @@ public class geradorC extends laBaseVisitor<Tipos>{
         
         for(TabelaDeSimbolos ts : aninhados.percorrerEscoposAninhados())
             if(ts.verificar(ctx.id1.getText()) != null)
-                return ts.verificar(ctx.id1.getText()).tipo;
+                return ts.verificar(ctx.id1.getText()).tipo; // Retorna o tipo da funcão.
         
         return null;
     }
     
     @Override
     public Tipos visitDimensao(laParser.DimensaoContext ctx){
-        for(int i = 0; i < ctx.exps.size(); i++){
+        for(int i = 0; i < ctx.exps.size(); i++){ // Escreve as dimensões.
             saida.append("[");
             visitExp_aritmetica(ctx.exps.get(i));
             saida.append("]");
@@ -833,8 +833,8 @@ public class geradorC extends laBaseVisitor<Tipos>{
     
     @Override
     public Tipos visitCmdRetorne(laParser.CmdRetorneContext ctx){
-        saida.append("return ");
-        visitExpressao(ctx.expressao());
+        saida.append("return "); // Escreve o comando retorne.
+        visitExpressao(ctx.expressao()); // Escreve a expressão do retorne.
         return null;
     }
 }

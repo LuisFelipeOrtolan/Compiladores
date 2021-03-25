@@ -1,3 +1,8 @@
+/*  Compilador da Linguagem Algorítmica.
+    Aluno: Luís Felipe Corrêa Ortolan
+    RA: 759375
+*/
+
 package br.ufscar.dc.compiladores.geradorcodigo;
 
 import br.ufscar.dc.compiladores.analisadorsemantico.laLexer;
@@ -22,7 +27,7 @@ public class Principal {
             as.visitPrograma(arvore); // Visita fazendo a análise semântica.
             Utils.errosSemanticos.forEach((s) -> pw.println(s)); // Reporta os erros.
             
-            if(Utils.errosSemanticos.isEmpty()){
+            if(Utils.errosSemanticos.isEmpty()){ // Se não tiver erros, converte o código para C.
                 geradorC gc = new geradorC();
                 gc.visitPrograma(arvore);
                 pw.println(gc.saida.toString());
