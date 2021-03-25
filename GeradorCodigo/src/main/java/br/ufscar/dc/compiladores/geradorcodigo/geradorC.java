@@ -830,4 +830,11 @@ public class geradorC extends laBaseVisitor<Tipos>{
         
         return null;
     }
+    
+    @Override
+    public Tipos visitCmdRetorne(laParser.CmdRetorneContext ctx){
+        saida.append("return ");
+        visitExpressao(ctx.expressao());
+        return null;
+    }
 }

@@ -25,7 +25,7 @@ public class Principal {
             if(Utils.errosSemanticos.isEmpty()){
                 geradorC gc = new geradorC();
                 gc.visitPrograma(arvore);
-                System.out.print(gc.saida.toString());
+                pw.println(gc.saida.toString());
             }
         }
     }
