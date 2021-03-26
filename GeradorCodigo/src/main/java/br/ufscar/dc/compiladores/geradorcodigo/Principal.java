@@ -31,7 +31,8 @@ public class Principal {
                 geradorC gc = new geradorC();
                 gc.visitPrograma(arvore);
                 pw.println(gc.saida.toString());
-            }
+            } else
+                pw.println("Fim da compilacao");
         }
     }
 }
