@@ -1,0 +1,8 @@
+# Analisador Semântico
+
+Nesta pasta se encontra o código fonte para o uso do Analisador Semânico da Linguagem Algorítmica (LA).  Trabalho realizado pelo aluno Luís Felipe Corrêa Ortolan - RA: 759375.
+
+O código usa dois argumentos, o caminho de um o arquivo de entrada com a linguagem LA e o segundo o endereço de um arquivo onde será escrita a saída.
+Para usar o analisador semântico, use o comando "java -jar ./target/AnalisadorSemantico-1.0-jar-with-dependencies.jar  caminho-arquivo-entrada-em-la caminho-arquivo-saida".
+
+Caso se deseje ampliar a função atual, o arquivo Java que lida com o ANTLR se encontra em "Compiladores/AnalisadorSemantico/src/main/java/br/ufscar/dc/compiladores/analisadorsemantico/Principal.java", enquanto a linguagem algorítmica está implementada no arquivo "Compiladores/AnalisadorSemantico/src/main/antlr4/cjava/br/ufscar/dc/compiladores/analisadorsemantico/la.g4". Além disso, existe um código em java para tratar os erros gerados pelo Antlr de forma personalizada, ele se encontra em "Compiladores/AnalisadorSemantico/src/main/java/br/ufscar/dc/compiladores/analisadorsemantico/ErroCustom.java". O código que produz a análise semântica pode ser encontrado em "Compiladores/AnalisadorSemantico/src/main/java/br/ufscar/dc/compiladores/analisadorsemantico/Programa.java", enquanto códigos que auxiliam esse programa com funções são (todos na pasta citada acima), auxFuncoes.java e TabelaDeFuncoes.java. As classes Escopos.java, TabelaDeSimbolos.java e EntradaTabelaSimbolos.java auxiliam a criar o conceito de escopos no programa e guardar as variáveis em cada escopo. A classe Tipos.java é uma classe enum que contém todos os tipos de variáveis no código LA e a classe Utils.java contém algumas funções úteis usada nos códigos.
