@@ -1,0 +1,21 @@
+sistema_tatico
+
+formacao : 5,4,1
+goleiro: brigido
+lateral: maranhao
+zagueiro: neto
+zagueiro: amaro
+zagueiro: bidu
+lateral: ricardinho
+meia: fumagalli
+meia: nazario
+meia: bruno
+meia:crispim
+atacante: xavier
+
+crispim:atacar
+fumagalli:defender
+ricardinho:defender
+bruno:atacar
+
+fim_sistema_tatico

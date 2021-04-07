@@ -24,15 +24,15 @@ public class Principal {
 
             ProgramaContext arvore = parser.programa(); // Realiza a análise sintática.
             
-            if(mcel.erros == true)
+            if(mcel.erros == true) // Se houverem erros sintáticos, encerra o programa.
                 return;
 
-            Programa as = new Programa();
+            Programa as = new Programa(); // Faz a análise semântica dos dados.
             as.visitPrograma(arvore);
             
             ErrosSemanticos.errosSemanticos.forEach((s) -> pw.println(s)); // Reporta os erros.
             
-            if(ErrosSemanticos.errosSemanticos.isEmpty()){ // Se não tiver erros, converte o código para C.
+            if(ErrosSemanticos.errosSemanticos.isEmpty()){ // Se não tiver erros, interpreta o código para geracão do esquema tático.
                 Interpretador inter = new Interpretador();
                 inter.visitPrograma(arvore);
             } else

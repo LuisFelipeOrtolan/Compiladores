@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 public class Programa extends linguagemTaticaBaseVisitor<Void>{
     
+    // Variáveis com o número de jogadores por posicão.
     int nroGoleiro = 1;
     int nroLaterais = 0;
     int nroZagueiros = 0;
@@ -54,56 +55,56 @@ public class Programa extends linguagemTaticaBaseVisitor<Void>{
     
     @Override
     public Void visitDecl_jogador(linguagemTaticaParser.Decl_jogadorContext ctx){
-        String posicao = ctx.pos.getText();
+        String posicao = ctx.pos.getText(); // Obtém a posicão do jogador.
         
-        if(null != posicao)
+        if(null != posicao) 
             switch (posicao) {
-            case "goleiro":
-                if(nroGoleiro > 0){
-                    nroGoleiro--;
-                    jogadores.put(ctx.n.getText(), posicao);
+            case "goleiro": // Se for um goleiro, 
+                if(nroGoleiro > 0){ // Verifica se ainda tem espaco pra mais um jogador naquela posicão.
+                    nroGoleiro--; // Diminui o número de espacos pra jogadores naquela posicão, 
+                    jogadores.put(ctx.n.getText(), posicao); // Coloca na lista de jogadores.
                 }
-                else
+                else // Caso não tenha, emite erro.
                     ErrosSemanticos.adicionarErroSemantico(ctx.start, "Erro, goleiro já declarado.");
                 break;
-            case "lateral":
-                if(nroLaterais > 0){
-                    nroLaterais--;
-                    jogadores.put(ctx.n.getText(), posicao);
+            case "lateral": // Se for um lateral, 
+                if(nroLaterais > 0){ // Verifica se ainda tem espaco pra mais um jogador naquela posicão.
+                    nroLaterais--; // Diminui o número de espacos pra jogadores naquela posicão,
+                    jogadores.put(ctx.n.getText(), posicao); // Coloca na lista de jogadores.
                 }
-                else
+                else // Caso não tenha, emite erro.
                     ErrosSemanticos.adicionarErroSemantico(ctx.start,"Erro, todos laterias já declarados");
                 break;
-            case "zagueiro":
-                if(nroZagueiros > 0){
-                    nroZagueiros--;
-                    jogadores.put(ctx.n.getText(), posicao);
+            case "zagueiro": // Se for um zagueiro,
+                if(nroZagueiros > 0){ // Verifica se ainda tem espaco pra mais um jogador naquela posicão.
+                    nroZagueiros--; // Diminui o número de espacos pra jogadores naquela posicão,
+                    jogadores.put(ctx.n.getText(), posicao); // Coloca na lista de jogadores.
                 }
-                else
+                else // Caso não tenha, emite erro.
                     ErrosSemanticos.adicionarErroSemantico(ctx.start,"Erro, todos os zagueiros já declarados");
                 break;
-            case "volante":
-                if(nroVolantes > 0){
-                    nroVolantes--;
-                    jogadores.put(ctx.n.getText(), posicao);
+            case "volante": // Se for um volante,
+                if(nroVolantes > 0){ // Verifica se ainda tem espaco pra mais um jogador naquela posicão.
+                    nroVolantes--; // Diminui o número de espacos pra jogadores naquela posicão,
+                    jogadores.put(ctx.n.getText(), posicao); // Coloca na lista de jogadores.
                 }
-                else
+                else // Caso não tenha, emite erro.
                     ErrosSemanticos.adicionarErroSemantico(ctx.start,"Erro, todos os volantes já declarados");
                 break;
-            case "meia":
-                if(nroMeias > 0){
-                    nroMeias--;
-                    jogadores.put(ctx.n.getText(), posicao);
+            case "meia": // Se for um meia,
+                if(nroMeias > 0){ // Verifica se ainda tem espaco pra mais um jogador naquela posicão.
+                    nroMeias--; // Diminui o número de espacos pra jogadores naquela posicão,
+                    jogadores.put(ctx.n.getText(), posicao); // Coloca na lista de jogadores.
                 }
-                else
+                else  // Caso não tenha, emite erro.
                     ErrosSemanticos.adicionarErroSemantico(ctx.start,"Erro, todos os meias já declarados");
                 break;
-            case "atacante":
-                if(nroAtacantes > 0){
-                    nroAtacantes--;
-                    jogadores.put(ctx.n.getText(), posicao);
+            case "atacante": // Se for um atacante,
+                if(nroAtacantes > 0){ // Verifica se ainda tem espaco pra mais um jogador naquela posicão.
+                    nroAtacantes--; // Diminui o número de espacos pra jogadores naquela posicão,
+                    jogadores.put(ctx.n.getText(), posicao); // Coloca na lista de jogadores.
                 }
-                else
+                else // Caso não tenha, emite erro.
                     ErrosSemanticos.adicionarErroSemantico(ctx.start,"Erro, todos os atacantes já declarados");
                 break;
             default:
@@ -116,10 +117,12 @@ public class Programa extends linguagemTaticaBaseVisitor<Void>{
     @Override
     public Void visitPapel(linguagemTaticaParser.PapelContext ctx){
         
-        String posicao = jogadores.get(ctx.n.getText());
-        if(posicao == null)
+        String posicao = jogadores.get(ctx.n.getText()); // Obtém posicão do jogador.
+        if(posicao == null) // Se posicão for nula, jogador não foi declarado.
             ErrosSemanticos.adicionarErroSemantico(ctx.start, "Atleta "+ctx.n.getText() + " não declarado");
         
+        // Faz verificacões se o papel do jogador corresponde com sua posicão.
+        // Restricões: goleiros só defendem, atacantes só atacam e zagueiros só defendem.
         if(null != posicao)switch (posicao) {
             case "goleiro":
                 if(ctx.a != null)

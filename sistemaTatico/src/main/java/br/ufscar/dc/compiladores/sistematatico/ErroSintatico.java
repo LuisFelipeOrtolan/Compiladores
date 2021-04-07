@@ -26,17 +26,17 @@ public class ErroSintatico implements ANTLRErrorListener {
     
     @Override
     public void	reportAmbiguity(Parser recognizer, DFA dfa, int startIndex, int stopIndex, boolean exact, BitSet ambigAlts, ATNConfigSet configs) {
-        // Não será necessário para o T2, pode deixar vazio
+        // Não necessário para essa aplicacão.
     }
     
     @Override
     public void reportAttemptingFullContext(Parser recognizer, DFA dfa, int startIndex, int stopIndex, BitSet conflictingAlts, ATNConfigSet configs) {
-        // Não será necessário para o T2, pode deixar vazio
+         // Não necessário para essa aplicacão.
     }
 
     @Override
     public void reportContextSensitivity(Parser recognizer, DFA dfa, int startIndex, int stopIndex, int prediction, ATNConfigSet configs) {
-        // Não será necessário para o T2, pode deixar vazio
+         // Não necessário para essa aplicacão.
     }
 
     @Override
@@ -48,12 +48,7 @@ public class ErroSintatico implements ANTLRErrorListener {
         
         Token t = (Token) offendingSymbol; // Obtém o token que gerou o problema.
         
-        String nome = linguagemTaticaLexer.VOCABULARY.getDisplayName(t.getType()); // Obtém o condteúdo do token que gerou o problema.
-        
-        if("ERRO".equals(nome)) // Se for um erro léxico com um símbolo desconhecido.
-            pw.println("Linha " + line + ": " + t.getText() + " - simbolo nao identificado");
-        else // Se for um erro sintático.
-            pw.println("Linha " + line + ": erro sintatico proximo a " + t.getText());
+        pw.println("Linha " + line + ": erro proximo a " + t.getText());
         
         
         pw.println("Fim da compilacao"); // Comunica o fim do programa por algum erro gerado.
