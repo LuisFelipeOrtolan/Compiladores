@@ -4,7 +4,6 @@
  */
 package br.ufscar.dc.compiladores.sistematatico;
 
-import br.ufscar.dc.compiladores.sistematatico.linguagemTaticaLexer;
 import java.io.PrintWriter;
 import java.util.BitSet;
 import org.antlr.v4.runtime.ANTLRErrorListener;
