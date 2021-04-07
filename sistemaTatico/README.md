@@ -3,7 +3,7 @@
 Aluno: Luís Felipe Corrêa Ortolan
 RA: 759375
 
-##Como funciona a linguagem?
+## Como funciona a linguagem?
 
 Todo código da linguagem deve ser iniciado com o discriminador "sistema_tatico" e encerrado com "fim_sistema_tatico". Depois de iniciado o código, deve vir a informação de qual a formação que vai ser usada, isso é feito por escrever "formacao:" e em sequencia, pelo menos três números entre 1 e 5 com vírgulas entre eles, cuja soma deve dar 10. Depois da declaração da formação, devem se declarar os atletas, para isso, deve-se escrever a posição (que pode ser: "goleiro", "lateral", "zagueiro", "volante", "meia" ou "atacante"), dois pontos e o nome do jogador. Esssa declaração deve ser feita 11 vezes, uma para cada jogador. 
 
