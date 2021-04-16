@@ -11,6 +11,7 @@ As posições declaradas devem bater com as declaradas no sistema tático, e ela
 
 Também é possível dizer se um jogador deve atacar ou defender. Para isso, basta colocar o nome de um jogador declarado, colocar dois pontos e em sequência escrever "atacar" ou "defender". Entretanto, na linguagem, goleiros e zagueiros não podem atacar e atacantes não podem defender. Esta parte de atribuir funções aos jogadores é opcional no código.
 
+Um vídeo onde executo o código: https://youtu.be/qZE74-ZJTZM
 
 ## Explicação do código
 Aqui se encontra o compilador para a linguagem sistema tático, criada pelo aluno. A pasta CasosDeTestes contém casos de teste para testar a análise léxica, sintática e semântica, além de casos corretor para verifica a imagem gerada. Para o acesso aos códigos fontes, basta acessar a pasta src/main/java/br/ufscar/dc/compiladores/sistematatico , ali estão as classes:
